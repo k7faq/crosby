@@ -1,0 +1,51 @@
+---
+# Install and configure (basics) NGINX on remote server
+# Verifies Python installed on remote server
+- hosts: www01
+  vars:
+  gather_facts: no
+  pre_tasks:
+    - name: 'install python2'
+      raw: sudo apt-get -y install python
+  tasks:
+
+  - name: copy ssl files and set permissions
+    copy:
+      src: ./ssl/
+      dest: /root/certs
+      owner: root
+      group: root
+      mode: 0400  
+
+  - name: Install NGINX
+    apt:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - nginx
+
+  - name: Configure NGINX
+    blockinfile:
+      path: /etc/nginx/conf.d/rhodeswebdesigns.com.conf
+      create: yes
+      block: |
+        server {
+            listen              443 ssl;
+            server_name         rhodeswebdesigns.com;
+            keepalive_timeout   70;
+
+            ssl_certificate     /root/certs/rhodeswebdesigns.com.crt;
+            ssl_certificate_key /root/certs/rhodeswebdesigns.com.key;
+            ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+            ssl_ciphers         HIGH:!aNULL:!MD5;
+
+            location /proxy {
+                proxy_pass http://10.0.0.100/; 
+            }
+        }
+
+  - name: enable and restart nginx
+    systemd:
+      name: nginx
+      state: restarted
+      enabled: yes

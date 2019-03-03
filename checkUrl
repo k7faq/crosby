@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+function usage() {
+	echo '''Usage: checkUrl [OPTIONS] 
+	[OPTIONS]:
+		-i INTERVAL	amount of time to wait in seconds 
+		-u URL 		url path
+     '''
+}
+
+while [[ "$#" -gt 0 ]]; 
+do 
+ 	case "$1" in
+ 		-h|--help) 
+ 			usage
+ 			;;
+ 		-u|--url) 
+ 			HOST="$2"
+ 			;;
+ 		-i|--interval) 
+ 			INTERVAL="$2"
+ 			;;
+ 	esac
+ 	shift
+done
+
+while :
+do
+
+	if curl -s --head --request GET "$HOST" | grep "200 OK" > /dev/null; then
+	    RESULT=0
+	else
+	    RESULT=2
+	fi
+
+    if [[ $RESULT == 0 ]]; then
+    	echo "HTTP OK HTTP/1.1 200 OK"
+    elif [[ $RESULT == 2 ]]; then   
+ 		echo "HTTP CRITICAL - Unable to open TCP socket"
+    fi
+
+    sleep "$INTERVAL"
+
+done
+
+exit
